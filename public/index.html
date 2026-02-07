@@ -3,48 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сообщения с Базой Данных</title>
+    <title>Проверка сервера</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
             padding: 20px;
-            background: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
+            text-align: center;
         }
         button {
+            padding: 15px 30px;
+            font-size: 18px;
             background: #007bff;
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 18px;
             border-radius: 5px;
             cursor: pointer;
-            width: 100%;
         }
-        button:hover {
-            background: #0056b3;
-        }
-        .status {
-            margin: 15px 0;
-            padding: 10px;
+        #status {
+            margin-top: 20px;
+            padding: 15px;
             border-radius: 5px;
-            display: none;
         }
         .success {
             background: #d4edda;
@@ -54,161 +32,72 @@
             background: #f8d7da;
             color: #721c24;
         }
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .controls button {
-            padding: 10px 15px;
-            font-size: 14px;
-        }
-        .messages {
-            margin-top: 30px;
-        }
-        .message {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-            background: #f9f9f9;
-        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📨 Отправить сообщение в базу данных</h1>
-        
-        <textarea id="messageInput" placeholder="Введите ваше сообщение..."></textarea>
-        
-        <button onclick="sendMessage()">💾 Сохранить в базу данных</button>
-        
-        <div class="controls">
-            <button onclick="loadMessages()" style="background: #28a745;">📥 Загрузить все сообщения</button>
-            <button onclick="getStats()" style="background: #17a2b8;">📊 Статистика</button>
-            <button onclick="checkHealth()" style="background: #6c757d;">🩺 Проверить сервер</button>
-        </div>
-        
-        <div id="status" class="status"></div>
-        
-        <div id="messages" class="messages"></div>
-    </div>
-
+    <h1>🛠️ Проверка сервера</h1>
+    
+    <button onclick="checkServer()">🔍 Проверить сервер</button>
+    <button onclick="sendTest()">📤 Отправить тестовое сообщение</button>
+    
+    <div id="status"></div>
+    
     <script>
-        const messageInput = document.getElementById('messageInput');
-        const statusDiv = document.getElementById('status');
-        const messagesDiv = document.getElementById('messages');
-        
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            
-            if (!message) {
-                showStatus('Введите сообщение!', 'error');
-                return;
-            }
-            
-            showStatus('Сохранение в базу данных...', 'info');
-            
-            try {
-                const response = await fetch('/api/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showStatus(`✅ Сообщение сохранено! ID: ${data.data.id}`, 'success');
-                    messageInput.value = '';
-                    setTimeout(() => loadMessages(), 1000);
-                } else {
-                    showStatus(`❌ Ошибка: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                showStatus('❌ Ошибка соединения с сервером', 'error');
-            }
-        }
-        
-        async function loadMessages() {
-            try {
-                const response = await fetch('/api/messages');
-                const data = await response.json();
-                
-                if (data.success) {
-                    if (data.messages.length === 0) {
-                        messagesDiv.innerHTML = '<p>Нет сообщений в базе данных</p>';
-                        showStatus('База данных пуста', 'info');
-                    } else {
-                        messagesDiv.innerHTML = `
-                            <h2>📋 Сообщения (${data.count}):</h2>
-                            ${data.messages.map(msg => `
-                                <div class="message">
-                                    <strong>ID: ${msg.id}</strong><br>
-                                    ${msg.content}<br>
-                                    <small>📅 ${msg.created_at} | 📏 ${msg.length} символов</small>
-                                </div>
-                            `).join('')}
-                        `;
-                        showStatus(`Загружено ${data.count} сообщений`, 'success');
-                    }
-                }
-            } catch (error) {
-                showStatus('❌ Ошибка загрузки сообщений', 'error');
-            }
-        }
-        
-        async function getStats() {
-            try {
-                const response = await fetch('/api/stats');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const stats = data.stats;
-                    showStatus(`
-                        📊 Статистика:<br>
-                        • Всего сообщений: ${stats.total_messages}<br>
-                        • Сегодня: ${stats.today_messages}<br>
-                        • Последнее: ${stats.last_message}<br>
-                        • Размер БД: ${stats.database_size}
-                    `, 'info');
-                }
-            } catch (error) {
-                showStatus('❌ Ошибка получения статистики', 'error');
-            }
-        }
-        
-        async function checkHealth() {
+        async function checkServer() {
             try {
                 const response = await fetch('/api/health');
                 const data = await response.json();
                 
-                showStatus(`
-                    🩺 Статус сервера:<br>
-                    • Статус: ${data.status}<br>
-                    • База данных: ${data.database}<br>
-                    • Сообщений: ${data.total_messages}<br>
-                    • Время работы: ${Math.round(data.uptime)} сек
-                `, 'success');
+                document.getElementById('status').innerHTML = `
+                    <div class="success">
+                        ✅ Сервер работает!<br>
+                        Статус: ${data.status}<br>
+                        Порт: ${data.port}<br>
+                        Время работы: ${Math.round(data.uptime)} сек
+                    </div>
+                `;
+                
+                console.log('Ответ сервера:', data);
             } catch (error) {
-                showStatus('❌ Сервер недоступен', 'error');
+                document.getElementById('status').innerHTML = `
+                    <div class="error">
+                        ❌ Сервер недоступен<br>
+                        Ошибка: ${error.message}
+                    </div>
+                `;
+                console.error('Ошибка:', error);
             }
         }
         
-        function showStatus(text, type) {
-            statusDiv.innerHTML = text;
-            statusDiv.className = type;
-            statusDiv.style.display = 'block';
-            
-            if (type !== 'error') {
-                setTimeout(() => {
-                    statusDiv.style.display = 'none';
-                }, 5000);
+        async function sendTest() {
+            try {
+                const response = await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: 'Тестовое сообщение'})
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById('status').innerHTML = `
+                    <div class="success">
+                        ✅ Сообщение отправлено!<br>
+                        Ответ: ${data.message}<br>
+                        Длина: ${data.length} символов
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('status').innerHTML = `
+                    <div class="error">
+                        ❌ Ошибка отправки<br>
+                        ${error.message}
+                    </div>
+                `;
             }
         }
         
-        // Автоматическая проверка при загрузке
-        window.addEventListener('load', checkHealth);
+        // Автопроверка при загрузке
+        window.addEventListener('load', checkServer);
     </script>
 </body>
 </html>
