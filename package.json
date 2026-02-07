@@ -1,5 +1,5 @@
 {
-  "name": "simple-text-app",
+  "name": "minimal-text-saver",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
