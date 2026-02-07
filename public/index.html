@@ -1,117 +1,34 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial;
-            background: #f0f0f0;
-            height: 100vh;
-        }
+async function sendMessage() {
+    const message = messageInput.value.trim();
+    
+    if (!message) {
+        showStatus('Введите текст', 'error');
+        return;
+    }
+    
+    showStatus('Отправка...');
+    
+    try {
+        const response = await fetch('/api/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                message: message
+            })
+        });
         
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        const data = await response.json();
         
-        textarea {
-            width: 100%;
-            height: 70vh;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            resize: none;
+        if (response.ok) {
+            messageInput.value = '';
+            showStatus('✓ Сообщение отправлено', 'success');
+            setTimeout(() => statusDiv.style.display = 'none', 2000);
+        } else {
+            showStatus('Ошибка: ' + (data.error || 'неизвестная ошибка'), 'error');
         }
-        
-        button {
-            width: 100%;
-            padding: 15px;
-            margin-top: 10px;
-            background: #007bff;
-            color: white;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        
-        button:hover {
-            background: #0056b3;
-        }
-        
-        #status {
-            margin-top: 10px;
-            padding: 10px;
-            display: none;
-            font-size: 14px;
-        }
-        
-        .success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <textarea id="messageInput" placeholder="Введите текст..."></textarea>
-        <button onclick="sendMessage()">Отправить</button>
-        <div id="status"></div>
-    </div>
-
-    <script>
-        const messageInput = document.getElementById('messageInput');
-        const statusDiv = document.getElementById('status');
-        const SERVER_URL = 'http://localhost:3000';
-        
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            
-            if (!message) {
-                showStatus('Введите текст', 'error');
-                return;
-            }
-            
-            showStatus('Отправка...');
-            
-            try {
-                const response = await fetch(`${SERVER_URL}/api/messages`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        message: message,
-                        timestamp: new Date().toLocaleString()
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    messageInput.value = '';
-                    showStatus('✓ Сообщение отправлено', 'success');
-                    setTimeout(() => statusDiv.style.display = 'none', 2000);
-                } else {
-                    showStatus('Ошибка: ' + (data.error || 'неизвестная ошибка'), 'error');
-                }
-            } catch (error) {
-                showStatus('Ошибка соединения', 'error');
-            }
-        }
-        
-        function showStatus(text, type = '') {
-            statusDiv.textContent = text;
-            statusDiv.className = type;
-            statusDiv.style.display = 'block';
-        }
-        
-        messageInput.focus();
-    </script>
-</body>
-</html>
+    } catch (error) {
+        showStatus('Ошибка соединения: ' + error.message, 'error');
+    }
+}
