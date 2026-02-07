@@ -1,76 +1,103 @@
 const express = require('express');
-const { Pool } = require('pg');
+const { Client } = require('pg');
 const path = require('path');
-const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// Ваша строка подключения
+const connectionString = 'postgresql://message_db_svae_user:rHkEJRmOfJeBjrmbwtHGMXVZ3EO6Ass0@dpg-d63gou4hg0os73cfsc00-a.frankfurt-postgres.render.com:5432/message_db_svae';
+
+console.log('Запуск сервера...');
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Получаем строку подключения из переменных окружения Render
-const databaseUrl = process.env.DATABASE_URL;
+// Функция для создания подключения к БД
+const createConnection = () => {
+  return new Client({
+    connectionString: connectionString,
+    ssl: {
+      rejectUnauthorized: false,
+      require: true
+    }
+  });
+};
 
-if (!databaseUrl) {
-  console.error('ОШИБКА: DATABASE_URL не установлена!');
-  console.log('Убедитесь, что в Render добавлена переменная DATABASE_URL');
-  process.exit(1);
-}
+// Глобальная переменная для хранения клиента
+let dbClient = null;
 
-console.log('Подключаемся к базе данных...');
-
-// Подключение к PostgreSQL
-const pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: {
-    rejectUnauthorized: false
+// Подключение к БД
+const connectToDB = async () => {
+  try {
+    dbClient = createConnection();
+    await dbClient.connect();
+    console.log('✅ Подключено к PostgreSQL');
+    
+    // Создаем таблицу если её нет
+    await dbClient.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Таблица messages готова');
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Ошибка подключения к БД:', error.message);
+    dbClient = null;
+    return false;
   }
-});
+};
 
-// Простая проверка подключения
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('Ошибка подключения к базе данных:', err.message);
-  } else {
-    console.log('✅ Успешно подключено к базе данных PostgreSQL');
-    console.log('Время на сервере БД:', res.rows[0].now);
+// Обработчик ошибок подключения
+const handleDBQuery = async (query, params) => {
+  if (!dbClient) {
+    const connected = await connectToDB();
+    if (!connected) {
+      throw new Error('Нет подключения к БД');
+    }
   }
-});
+  
+  try {
+    return await dbClient.query(query, params);
+  } catch (error) {
+    // Если соединение потеряно, пытаемся переподключиться
+    if (error.code === 'ECONNREFUSED' || error.message.includes('connection')) {
+      console.log('Переподключение к БД...');
+      const connected = await connectToDB();
+      if (connected) {
+        return await dbClient.query(query, params);
+      }
+    }
+    throw error;
+  }
+};
 
-// Создание таблицы если её нет
-pool.query(`
-  CREATE TABLE IF NOT EXISTS messages (
-    id SERIAL PRIMARY KEY,
-    text TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )
-`)
-.then(() => console.log('✅ Таблица messages готова'))
-.catch(err => console.error('Ошибка создания таблицы:', err));
+// Инициализация подключения при старте
+connectToDB();
 
-// Маршрут для проверки работы сервера
+// Маршруты
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
-    database: 'connected'
+    database: dbClient ? 'connected' : 'disconnected'
   });
 });
 
-// Проверка подключения к БД
 app.get('/api/db-check', async (req, res) => {
   try {
-    const result = await pool.query('SELECT NOW()');
+    const result = await handleDBQuery('SELECT NOW()');
     res.json({ 
       success: true, 
       message: 'База данных подключена',
       time: result.rows[0].now
     });
   } catch (error) {
-    console.error('Ошибка проверки БД:', error);
     res.status(500).json({ 
       error: 'Ошибка подключения к БД',
       details: error.message 
@@ -78,9 +105,9 @@ app.get('/api/db-check', async (req, res) => {
   }
 });
 
-// Сохранение текста
+// Сохранение текста - СИНХРОННАЯ версия
 app.post('/api/save', async (req, res) => {
-  console.log('Получен запрос на сохранение текста');
+  console.log('Получен запрос на сохранение');
   
   try {
     const { text } = req.body;
@@ -89,9 +116,10 @@ app.post('/api/save', async (req, res) => {
       return res.status(400).json({ error: 'Текст не может быть пустым' });
     }
 
-    console.log('Сохранение текста:', text.substring(0, 50) + '...');
+    console.log('Текст для сохранения:', text.substring(0, 50) + '...');
 
-    const result = await pool.query(
+    // Сохраняем текст напрямую
+    const result = await handleDBQuery(
       'INSERT INTO messages (text) VALUES ($1) RETURNING id, created_at',
       [text]
     );
@@ -106,14 +134,11 @@ app.post('/api/save', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Ошибка сохранения:', error.message);
-    console.error('Полная ошибка:', error);
     
-    // Подробная информация об ошибке
     res.status(500).json({ 
       error: 'Ошибка сервера',
       details: error.message,
-      code: error.code,
-      hint: 'Проверьте подключение к базе данных и SSL настройки'
+      code: error.code
     });
   }
 });
@@ -121,7 +146,7 @@ app.post('/api/save', async (req, res) => {
 // Получение всех сообщений
 app.get('/api/messages', async (req, res) => {
   try {
-    const result = await pool.query(
+    const result = await handleDBQuery(
       'SELECT * FROM messages ORDER BY created_at DESC LIMIT 100'
     );
     res.json(result.rows);
@@ -131,10 +156,10 @@ app.get('/api/messages', async (req, res) => {
   }
 });
 
-// Получение количества сообщений
+// Статистика
 app.get('/api/stats', async (req, res) => {
   try {
-    const result = await pool.query('SELECT COUNT(*) FROM messages');
+    const result = await handleDBQuery('SELECT COUNT(*) FROM messages');
     res.json({ count: parseInt(result.rows[0].count) });
   } catch (error) {
     console.error('Ошибка получения статистики:', error);
@@ -142,14 +167,11 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// Отдача статических файлов
+// Простой HTML
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
-  console.log(`🌐 Откройте в браузере: http://localhost:${PORT}`);
-  console.log(`📊 Проверка здоровья: http://localhost:${PORT}/api/health`);
-  console.log(`🔌 Проверка БД: http://localhost:${PORT}/api/db-check`);
 });
