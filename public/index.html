@@ -3,359 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Простой текстовый сайт</title>
+    <title>Отладка</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 800px;
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .text-area-container {
-            margin-bottom: 30px;
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 300px;
-            padding: 20px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 18px;
-            line-height: 1.6;
-            resize: vertical;
-            transition: all 0.3s ease;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        button {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            border: none;
-            padding: 16px 40px;
-            font-size: 18px;
-            font-weight: 600;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button.secondary {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        }
-
-        button.secondary:hover {
-            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
-        }
-
-        .status {
-            margin-top: 25px;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            font-weight: 500;
-            display: none;
-        }
-
-        .status.success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 2px solid #a7f3d0;
-            display: block;
-        }
-
-        .status.error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 2px solid #fecaca;
-            display: block;
-        }
-
-        .stats {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 30px;
-            text-align: center;
-        }
-
-        .stats h3 {
-            color: #4f46e5;
-            margin-bottom: 15px;
-        }
-
-        .counter {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #1e293b;
-        }
-
-        .char-count {
-            text-align: right;
-            margin-top: 10px;
-            color: #64748b;
-            font-size: 14px;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-            }
-            
-            .content {
-                padding: 20px;
-            }
-            
-            textarea {
-                min-height: 200px;
-            }
-            
-            button {
-                width: 100%;
-                justify-content: center;
-            }
-        }
+        body { font-family: Arial; padding: 20px; }
+        textarea { width: 100%; height: 200px; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; }
+        .success { color: green; }
+        .error { color: red; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📝 Сохранение текста</h1>
-            <p>Введите любой текст и сохраните его в базе данных</p>
-        </div>
-        
-        <div class="content">
-            <div class="text-area-container">
-                <textarea 
-                    id="textInput" 
-                    placeholder="Введите ваш текст здесь..."
-                    maxlength="10000"
-                ></textarea>
-                <div class="char-count">
-                    <span id="charCount">0</span> / 10000 символов
-                </div>
-            </div>
-            
-            <div class="button-container">
-                <button onclick="saveText()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                    Сохранить текст
-                </button>
-                
-                <button class="secondary" onclick="loadMessages()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                    </svg>
-                    Показать сохраненные
-                </button>
-                
-                <button class="secondary" onclick="clearText()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
-                        <line x1="18" y1="9" x2="12" y2="15"></line>
-                        <line x1="12" y1="9" x2="18" y2="15"></line>
-                    </svg>
-                    Очистить
-                </button>
-            </div>
-            
-            <div id="status" class="status"></div>
-            
-            <div class="stats">
-                <h3>Статистика</h3>
-                <div class="counter" id="totalMessages">0</div>
-                <p>сохраненных сообщений</p>
-            </div>
-            
-            <div id="messagesList" style="display: none; margin-top: 30px;">
-                <h3 style="color: #4f46e5; margin-bottom: 20px;">Сохраненные сообщения:</h3>
-                <div id="messagesContainer"></div>
-            </div>
-        </div>
+    <h1>Тестовое приложение</h1>
+    
+    <div>
+        <button onclick="checkHealth()">Проверить сервер</button>
+        <button onclick="checkDB()">Проверить БД</button>
+        <button onclick="getStats()">Статистика</button>
     </div>
-
+    
+    <textarea id="textInput" placeholder="Введите текст..."></textarea>
+    <br>
+    <button onclick="saveText()">Сохранить</button>
+    
+    <div id="result"></div>
+    
     <script>
-        // Обновление счетчика символов
-        document.getElementById('textInput').addEventListener('input', function() {
-            const count = this.value.length;
-            document.getElementById('charCount').textContent = count;
-        });
-
-        // Сохранение текста
+        async function checkHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                showResult(`Сервер: ${data.status}`, 'success');
+            } catch (error) {
+                showResult(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkDB() {
+            try {
+                const response = await fetch('/api/db-check');
+                const data = await response.json();
+                if (data.success) {
+                    showResult(`БД подключена: ${data.time}`, 'success');
+                } else {
+                    showResult(`Ошибка БД: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showResult(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
         async function saveText() {
-            const text = document.getElementById('textInput').value.trim();
-            const status = document.getElementById('status');
-            
-            if (!text) {
-                showStatus('Введите текст перед сохранением!', 'error');
+            const text = document.getElementById('textInput').value;
+            if (!text.trim()) {
+                showResult('Введите текст!', 'error');
                 return;
             }
             
             try {
                 const response = await fetch('/api/save', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text })
                 });
                 
                 const data = await response.json();
-                
                 if (data.success) {
-                    showStatus('✅ Текст успешно сохранен!', 'success');
+                    showResult(`✅ Сохранено! ID: ${data.id}`, 'success');
                     document.getElementById('textInput').value = '';
-                    document.getElementById('charCount').textContent = '0';
-                    updateStats();
                 } else {
-                    showStatus('❌ Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'error');
+                    showResult(`❌ Ошибка: ${data.error}`, 'error');
                 }
             } catch (error) {
-                console.error('Ошибка:', error);
-                showStatus('❌ Ошибка соединения с сервером', 'error');
+                showResult(`❌ Ошибка сети: ${error.message}`, 'error');
             }
         }
-
-        // Загрузка сохраненных сообщений
-        async function loadMessages() {
+        
+        async function getStats() {
             try {
-                const response = await fetch('/api/messages');
-                const messages = await response.json();
-                
-                const container = document.getElementById('messagesContainer');
-                const list = document.getElementById('messagesList');
-                
-                if (messages.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: #64748b;">Нет сохраненных сообщений</p>';
-                    list.style.display = 'block';
-                    return;
-                }
-                
-                container.innerHTML = messages.map(msg => `
-                    <div style="
-                        background: #f8fafc;
-                        border-left: 4px solid #4f46e5;
-                        padding: 15px;
-                        margin-bottom: 15px;
-                        border-radius: 8px;
-                    ">
-                        <div style="color: #64748b; font-size: 14px; margin-bottom: 8px;">
-                            ${new Date(msg.created_at).toLocaleString('ru-RU')}
-                        </div>
-                        <div style="white-space: pre-wrap; line-height: 1.5;">
-                            ${msg.text}
-                        </div>
-                    </div>
-                `).join('');
-                
-                list.style.display = 'block';
-                showStatus(`Загружено ${messages.length} сообщений`, 'success');
-                
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                showResult(`Сообщений в БД: ${data.count}`, 'success');
             } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                showStatus('❌ Ошибка загрузки сообщений', 'error');
+                showResult(`Ошибка: ${error.message}`, 'error');
             }
         }
-
-        // Очистка поля ввода
-        function clearText() {
-            document.getElementById('textInput').value = '';
-            document.getElementById('charCount').textContent = '0';
-            showStatus('Поле очищено', 'success');
+        
+        function showResult(message, className) {
+            const div = document.getElementById('result');
+            div.innerHTML = `<p class="${className}">${message}</p>`;
         }
-
-        // Обновление статистики
-        async function updateStats() {
-            try {
-                const response = await fetch('/api/messages');
-                const messages = await response.json();
-                document.getElementById('totalMessages').textContent = messages.length;
-            } catch (error) {
-                console.error('Ошибка обновления статистики:', error);
-            }
-        }
-
-        // Показать статус
-        function showStatus(message, type) {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = 'status ' + type;
-            
-            setTimeout(() => {
-                status.style.display = 'none';
-            }, 5000);
-        }
-
-        // Загрузка статистики при запуске
-        document.addEventListener('DOMContentLoaded', updateStats);
     </script>
 </body>
 </html>
